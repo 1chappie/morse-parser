@@ -1,6 +1,6 @@
 import Lib.re as re
-import logic
-from dictionary import * 
+import data.logic as logic
+from data.dictionary import * 
 
 #TODO: instruction set
 #TODO: a way to handle verbose without making the code cluttered
@@ -16,7 +16,8 @@ def setGuide(inputMode = None, outputMode = 'auto', outputDumpFunction = None):
     logic.inputMode = inputMode
     logic.outputMode = outputMode
     logic.outputDump = outputDumpFunction
-    
+#TODO: move translator to logic
+#TODO: remake user interface so it easier
 def translate(string, outputMode = 'auto', guidedMode = False):
     intext, inputMode = logic.processInput(string.strip().lower(), guidedMode)
     outtext =''
