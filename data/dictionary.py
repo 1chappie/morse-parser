@@ -252,5 +252,25 @@ valueDict = (
         "-..-.",
         "11101010111010",
         "/"
+    ),
+    (
+        "-.-.--",
+        "11101011101011101110",
+        "!"
     )
 )
+
+period = (
+    ".-.-.-",
+    "101110101110101110",
+    "."
+)
+
+def thereIsAFuckingPeriod(inputType, string):
+    if inputType == 'typed' and string == '.':
+        return True
+    if inputType == 'classic' and string == '.-.-.-':
+        return True
+    if inputType == 'binary' and string == '101110101110101110':
+        return True
+    return False
