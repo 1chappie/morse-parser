@@ -5,64 +5,50 @@ from data.dictionary import *
 #TODO: instruction set
 #TODO: a way to handle verbose without making the code cluttered
 
-def setSignal(dotSignalFunc = None, dashSignalFunc = None, shortPauseSignalFunc = None, longPauseSignalFunc = None):
+def signalOutputs(dotSignalFunc = None, dashSignalFunc = None, shortPauseSignalFunc = None, longPauseSignalFunc = None):
     logic.dotSignal = dotSignalFunc
     logic.dashSignal = dashSignalFunc
     logic.shortPauseSignal = shortPauseSignalFunc
     logic.longPauseSignal = longPauseSignalFunc
-
-def setGuide(inputMode = None, outputMode = 'auto', outputDumpFunction = None):
-    if inputMode is 'classic': print('Warning: \'flash()\' starts parsing as soon as a letter delimiter for the selected input type is encountered, therefore all letters in classic mode must end with \'\\s\'')
-    logic.inputMode = inputMode
-    logic.outputMode = outputMode
-    logic.outputDump = outputDumpFunction
-#TODO: move translator to logic
-#TODO: remake user interface so it easier
-def translate(string, outputMode = 'auto', guidedMode = False):
-    intext, inputMode = logic.processInput(string.strip().lower(), guidedMode)
-    outtext =''
-
-    if outputMode is 'auto':
-        outputMode = 'classic' if inputMode is 'typed' else 'typed'
-    if outputMode not in modeParse:
-        raise ValueError("Invalid mode. Try \'classic\', \'binary\', \'typed\' or \'signal\'.", logic.outputMode)
-    if outputMode is 'signal':
-        if logic.dotSignal==None or logic.dashSignal==None or logic.shortPauseSignal==None or logic.longPauseSignal==None:
-            raise RuntimeError("Please assign output functions with 'morse.signalConfig(,,,)' before using the 'signal' argument.")
-        sendSignals = True
-        outputMode = 'classic'
+    if None in (dotSignalFunc, dashSignalFunc, shortPauseSignalFunc, longPauseSignalFunc):
+        raise ValueError('All signals must be assigned a function.')
     else:
-        sendSignals = False
+        logic.signalsSet = True
 
-    for index, letter in enumerate(intext):
-        if letter == '!newWord&':
-            outtext += wordDelimiterParse[outputMode]
-        else:
-            snatcher = None
-            snatcher = list(filter(lambda x: letter in x, valueDict))#why cant you unpack
-            if snatcher:
-                print('-> snatched ',snatcher, 'for', letter)
-                outtext += snatcher[0][modeParse[outputMode]]  #fix nestednessesesees sometime
-                if index + 1 != len(intext):
-                    outtext += letterDelimiterParse[outputMode]
-            else:
-                raise ValueError("Cannot parse \"" + letter + "\" through the "+ inputMode +" input mode." )
-    if sendSignals: logic.sendSignal(outtext)
-    if logic.outputDump: logic.outputDump(outtext)
-    return outtext
+def translatorArgs(inputMode = None, outputMode = 'auto', outputFunc = None):
+    if inputMode is 'classic': print('Warning: \'flash()\' starts parsing as soon as a letter delimiter for the selected input type is encountered, therefore all letters in classic mode must end with \'\\s\'')
+    if None in (inputMode, outputFunc):
+        raise RuntimeError('Please assign a function for output dumping and the input mode through \'morse.setParser(,,)\' before calling \'morse.signal()\'. The parsed output will be transmitted as a str argument to the given function.')
+    logic.inputMode = inputMode #TODO: insignificant atm
+    logic.outputMode = outputMode
+    logic.outputFunc = outputFunc
+#TODO: remake user interface so it easier
 
-def clearQueue():
+def translate(string, outputMode='auto'):
+    return logic.parse(string, 'auto', outputMode)
+    
+def clearMemory():
     logic.queue = ''
     
-def flash(string):
-    if logic.outputDump == None or logic.inputMode ==None:
-        raise RuntimeError('Please assign a function for output dumping and the input mode through \'morse.setGuide(,,,)\' before calling \'morse.flash()\'. The parsed output will be transmitted as a str argument to the given function.')
+def signal(string):
     logic.queue+= string
-    if letterDelimiterParse[logic.inputMode] in logic.queue:
-        translate(logic.queue, logic.outputMode, True)
-        clearQueue()
+    if letterDelimiterParse[logic.inputMode] in logic.queue: #TODO: translate just till the space
+        logic.outputFunc(logic.parse(logic.queue,logic.inputMode, logic.outputMode))
+        clearMemory()
 
 #TODO: test how big can the input be
 #TODO: translate spaces too idk if they work
 if __name__ == '__main__':
-    print(translate('.... . .-.. .-.. ---    .-- --- .-. .-.. -..'))
+    def dot():
+        print('dot')
+    def dash():
+        print('dash')
+    def sp():
+        print('sp')
+    def lp():
+        print('lp')
+    translatorArgs('classic', 'auto', print)
+    for char in '.... . .-.. .-.. ---    -.. ..- -.. . ':
+        signal(char)
+    signalOutputs(dot,dash,sp,lp)
+    print(translate('.... . .-.. .-.. ---    -.. ..- -.. .'))

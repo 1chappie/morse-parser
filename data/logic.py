@@ -1,14 +1,18 @@
 import Lib.re as re
+from data.dictionary import *
 
-inputMode = None
-outputMode = None
+#inputMode = None
+#outputMode = None
 
 queue = ''
+
 dotSignal = None
 dashSignal = None
 shortPauseSignal = None
 longPauseSignal = None
-outputDump = None
+signalsSet = False
+
+outputFunc = None
 
 def imDetect(passedString):
     if re.match(r'([.-]|\s)+$', passedString):
@@ -17,13 +21,13 @@ def imDetect(passedString):
         return 'binary'
     return 'typed'
 
-def processInput(passedString, guidedMode):
-    global inputMode
-    if not guidedMode:
-        _inputMode = imDetect(passedString)
-    else:
-        if inputMode is None: raise RuntimeError("While using guidedMode, you must use \'Set()\' to specify the inputMode.")
-        _inputMode = inputMode
+def processInput(passedString):
+    #global inputMode
+    #if not guidedMode:
+    _inputMode = imDetect(passedString)
+    #else:
+    #    if inputMode is None: raise RuntimeError("While using guidedMode, you must use \'Set()\' to specify the inputMode.")
+    #    _inputMode = inputMode
 
     if _inputMode == 'classic':
         #replace new word indicators (tab) with ' !newWord& '
@@ -53,8 +57,8 @@ def processInput(passedString, guidedMode):
                 newpassedString.append('!newWord&')
         return newpassedString, _inputMode
 
-def sendSignal(string):
-    for char in string:
+def sendSignal(classicString):
+    for char in classicString:
         if char is '.':
             dotSignal()
         elif char is '-':
@@ -64,4 +68,37 @@ def sendSignal(string):
         elif char is '\t':
             longPauseSignal()
         else:
-            raise RuntimeError('Couldn\'t parse signal.')
+            raise RuntimeError('Couldn\'t parse \'{}\' as signal.'.format(char))
+
+def parse(string, inputMode = 'auto', outputMode = 'auto'):
+    intext, inputMode = processInput(string.strip().lower())
+    outtext =''
+
+    if outputMode is 'auto':
+        outputMode = 'classic' if inputMode is 'typed' else 'typed'
+    if outputMode is 'signal':
+        if signalsSet is False:
+            raise RuntimeError("Please assign output functions with 'morse.setSignal(,,,)' before trying to output as signal.")
+        else:
+            _doSignals = True
+            outputMode = 'classic'
+    else:
+        _doSignals = False
+    if outputMode not in modeParse:
+        raise ValueError("Invalid mode. Try \'classic\', \'binary\', \'typed\' or \'signal\'.", outputMode)
+
+    for index, letter in enumerate(intext):
+        if letter == '!newWord&':
+            outtext += wordDelimiterParse[outputMode]
+        else:
+            snatcher = None
+            snatcher = list(filter(lambda x: letter in x, valueDict))#why cant you unpack
+            if snatcher:
+                print('-> snatched ',snatcher, 'for', letter)
+                outtext += snatcher[0][modeParse[outputMode]]  #fix nestednessesesees sometime
+                if index + 1 != len(intext):
+                    outtext += letterDelimiterParse[outputMode]
+            else:
+                raise ValueError("Cannot parse \"" + letter + "\" through the "+ inputMode +" input mode." )
+    if _doSignals: sendSignal(outtext)
+    return outtext
