@@ -2,7 +2,8 @@ import Lib.re as re
 import data.logic as logic
 from data.dictionary import * 
 
-#TODO: instruction set
+#hello
+#TODO: instruction sets
 #TODO: a way to handle verbose without making the code cluttered
 
 def signalOutputs(dotSignalFunc = None, dashSignalFunc = None, shortPauseSignalFunc = None, longPauseSignalFunc = None):
